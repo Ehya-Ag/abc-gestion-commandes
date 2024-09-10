@@ -1,12 +1,14 @@
 const readlineSync = require('readline-sync');
 const { getCustomers, addCustomer, updateCustomer, deleteCustomer } = require('./customerModule');
 const { getProducts, addProduct, updateProduct, deleteProduct } = require('./productModule');
+const { getPurchaseOrders, addPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder } = require('./purchaseOrderModule');
 
 // Menu principal
 function displayMainMenu() {
   console.log('\n--- Menu Principal ---');
   console.log('1. Gestion des clients');
   console.log('2. Gestion des produits');
+  console.log('3. Gestion des bons de commande');
   console.log('0. Quitter');
 
   const choice = readlineSync.question('Votre choix: ');
@@ -39,14 +41,30 @@ function displayProductMenu() {
   handleProductMenu(choice);
 }
 
+// Menu pour les bons de commande
+function displayPurchaseOrderMenu() {
+  console.log('\n--- Menu Bons de commande ---');
+  console.log('1. Liste des bons de commande');
+  console.log('2. Ajouter un bon de commande');
+  console.log('3. Mettre à jour un bon de commande');
+  console.log('4. Supprimer un bon de commande');
+  console.log('0. Retour au menu principal');
+
+  const choice = readlineSync.question('Votre choix: ');
+  handlePurchaseOrderMenu(choice);
+}
+
 // Gestion du menu principal
 function handleMainMenu(choice) {
   switch (choice) {
     case '1':
-      displayCustomerMenu();  
+      displayCustomerMenu();
       break;
     case '2':
-      displayProductMenu(); 
+      displayProductMenu();
+      break;
+    case '3':
+      displayPurchaseOrderMenu();
       break;
     case '0':
       console.log('Au revoir !');
@@ -175,4 +193,67 @@ function handleProductMenu(choice) {
   }
 }
 
+// Gestion du menu bons de commande
+function handlePurchaseOrderMenu(choice) {
+  switch (choice) {
+    case '1':
+      getPurchaseOrders()
+        .then((orders) => {
+          console.log('\n--- Liste des bons de commande ---');
+          orders.forEach(order => {
+            console.log(`ID: ${order.id}, Client: ${order.customer_id}, Date: ${order.date}, Adresse: ${order.delivery_address}, Suivi: ${order.track_number}, Statut: ${order.status}`);
+          });
+          displayPurchaseOrderMenu();
+        })
+        .catch((err) => console.error(err));
+      break;
+    case '2':
+      const customer_id = readlineSync.question('ID du client : ');
+      const date = readlineSync.question('Date (YYYY-MM-DD) : ');
+      const delivery_address = readlineSync.question('Adresse de livraison : ');
+      const track_number = readlineSync.question('Numéro de suivi : ');
+      const status = readlineSync.question('Statut : ');
+
+      addPurchaseOrder({ customer_id, date, delivery_address, track_number, status })
+        .then(() => {
+          console.log('Bon de commande ajouté avec succès.');
+          displayPurchaseOrderMenu();
+        })
+        .catch((err) => console.error(err));
+      break;
+    case '3':
+      const idToUpdate = readlineSync.question('ID du bon de commande à mettre à jour : ');
+      const newCustomer_id = readlineSync.question('Nouvel ID du client : ');
+      const newDate = readlineSync.question('Nouvelle date (YYYY-MM-DD) : ');
+      const newDelivery_address = readlineSync.question('Nouvelle adresse de livraison : ');
+      const newTrack_number = readlineSync.question('Nouveau numéro de suivi : ');
+      const newStatus = readlineSync.question('Nouveau statut : ');
+
+      updatePurchaseOrder(idToUpdate, { customer_id: newCustomer_id, date: newDate, delivery_address: newDelivery_address, track_number: newTrack_number, status: newStatus })
+        .then(() => {
+          console.log('Bon de commande mis à jour avec succès.');
+          displayPurchaseOrderMenu();
+        })
+        .catch((err) => console.error('Erreur :', err.message));
+      break;
+    case '4':
+      const idToDelete = readlineSync.question('ID du bon de commande à supprimer : ');
+
+      deletePurchaseOrder(idToDelete)
+        .then(() => {
+          console.log('Bon de commande supprimé avec succès.');
+          displayPurchaseOrderMenu();
+        })
+        .catch((err) => console.error('Erreur :', err.message));
+      break;
+    case '0':
+      displayMainMenu();
+      break;
+    default:
+      console.log('Choix invalide, veuillez réessayer.');
+      displayPurchaseOrderMenu();
+  }
+}
+
+// Démarrer l'application
 displayMainMenu();
