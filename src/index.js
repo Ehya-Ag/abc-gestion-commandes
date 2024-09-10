@@ -298,7 +298,10 @@ function handlePurchaseOrderMenu(choice) {
           console.log('Bon de commande ajouté avec succès.');
           displayPurchaseOrderMenu();
         })
-        .catch((err) => console.error(err));
+        .catch((err) => {
+          console.error(err)
+          displayPurchaseOrderMenu();
+  });
       break;
     case '3':
       const idToUpdate = readlineSync.question('ID du bon de commande à mettre à jour : ');
@@ -313,7 +316,10 @@ function handlePurchaseOrderMenu(choice) {
           console.log('Bon de commande mis à jour avec succès.');
           displayPurchaseOrderMenu();
         })
-        .catch((err) => console.error('Erreur :', err.message));
+        .catch((err) => {
+          console.error('Erreur :', err.message)
+          displayPurchaseOrderMenu();
+        });
       break;
     case '4':
       const idToDelete = readlineSync.question('ID du bon de commande à supprimer : ');
@@ -323,7 +329,10 @@ function handlePurchaseOrderMenu(choice) {
           console.log('Bon de commande supprimé avec succès.');
           displayPurchaseOrderMenu();
         })
-        .catch((err) => console.error('Erreur :', err.message));
+        .catch((err) => {
+          console.error('Erreur :', err.message)
+          displayPurchaseOrderMenu();
+        });
       break;
     case '5':  
       const order_id = readlineSync.questionInt('Saisissez l\'ID de la commande : ');
@@ -334,6 +343,7 @@ function handlePurchaseOrderMenu(choice) {
         })
         .catch((err) => {
           console.error('Erreur lors de l\'affichage des détails de la commande :', err.message);
+          displayPurchaseOrderMenu();
         });
       break;
     case '0':
@@ -344,63 +354,107 @@ function handlePurchaseOrderMenu(choice) {
       displayPurchaseOrderMenu();
   }
 }
-
-//Payements
 // Gestion du menu paiements
 function handlePaymentMenu(choice) {
   switch (choice) {
     case '1':
       getPayments()
         .then((payments) => {
-          displayPaymentMenu();
+          console.log('\n--- Liste des paiements ---');
+          console.table(payments);
+          displayPaymentMenu(); 
         })
-        .catch((err) => console.error(err));
+        .catch((err) => {
+          console.error('Erreur lors de la récupération des paiements :', err.message);
+          displayPaymentMenu(); 
+        });
       break;
-    case '2':
-      const order_id = readlineSync.question('ID du bon de commande : ');
-      const amount = readlineSync.question('Montant : ');
-      const date = readlineSync.question('Date (YYYY-MM-DD) : ');
-      const status = readlineSync.question('Statut : ');
 
-      addPayment(order_id, amount, date, status)
+    case '2':
+      const order_id = readlineSync.questionInt('ID du bon de commande : ');
+      const amount = readlineSync.questionFloat('Montant : ');
+      const date = readlineSync.question('Date (YYYY-MM-DD) : ');
+      const payment_method = readlineSync.question('Méthode de paiement : ');
+
+      const paymentData = {
+        order_id,
+        date,
+        amount,
+        payment_method
+      };
+
+      addPayment(paymentData)
         .then(() => {
           console.log('Paiement ajouté avec succès.');
-          displayPaymentMenu();
+          displayPaymentMenu(); 
         })
-        .catch((err) => console.error(err));
+        .catch((err) => {
+          console.error('Erreur lors de l\'ajout du paiement :', err.message);
+          displayPaymentMenu(); 
+        });
       break;
-    case '3':
-      const paymentIdToUpdate = readlineSync.question('ID du paiement à mettre à jour : ');
-      const newOrderId = readlineSync.question('Nouvel ID du bon de commande : ');
-      const newAmount = readlineSync.question('Nouveau montant : ');
-      const newDate = readlineSync.question('Nouvelle date (YYYY-MM-DD) : ');
-      const newStatus = readlineSync.question('Nouveau statut : ');
 
-      updatePayment(paymentIdToUpdate, newOrderId, newAmount, newDate, newStatus)
+    case '3':
+      const paymentIdToUpdate = readlineSync.questionInt('ID du paiement à mettre à jour : ');
+      const newOrderId = readlineSync.questionInt('Nouvel ID du bon de commande : ');
+      const newAmount = readlineSync.questionFloat('Nouveau montant : ');
+      const newDate = readlineSync.question('Nouvelle date (YYYY-MM-DD) : ');
+      const newPaymentMethod = readlineSync.question('Nouvelle méthode de paiement : ');
+
+      const updatedPaymentData = {
+        order_id: newOrderId,
+        date: newDate,
+        amount: newAmount,
+        payment_method: newPaymentMethod
+      };
+
+      updatePayment(paymentIdToUpdate, updatedPaymentData)
         .then(() => {
           console.log('Paiement mis à jour avec succès.');
           displayPaymentMenu();
         })
-        .catch((err) => console.error('Erreur :', err.message));
+        .catch((err) => {
+          console.error('Erreur lors de la mise à jour du paiement :', err.message);
+          displayPaymentMenu();
+        });
       break;
+
     case '4':
-      const paymentIdToDelete = readlineSync.question('ID du paiement à supprimer : ');
+      const paymentIdToDelete = readlineSync.questionInt('ID du paiement à supprimer : ');
 
       deletePayment(paymentIdToDelete)
         .then(() => {
           console.log('Paiement supprimé avec succès.');
-          displayPaymentMenu();
+          displayPaymentMenu(); 
         })
-        .catch((err) => console.error('Erreur :', err.message));
+        .catch((err) => {
+          console.error('Erreur lors de la suppression du paiement :', err.message);
+          displayPaymentMenu();
+        });
       break;
+
     case '0':
+      
       displayMainMenu();
       break;
+
     default:
       console.log('Choix invalide, veuillez réessayer.');
-      displayPaymentMenu();
+      displayPaymentMenu(); 
   }
 }
 
+// Fonction d'affichage du menu des paiements
+function displayPaymentMenu() {
+  console.log('\n--- Menu des Paiements ---');
+  console.log('1. Lister les paiements');
+  console.log('2. Ajouter un paiement');
+  console.log('3. Mettre à jour un paiement');
+  console.log('4. Supprimer un paiement');
+  console.log('0. Retour au menu principal');
+
+  const choice = readlineSync.question('Choisissez une option : ');
+  handlePaymentMenu(choice);
+}
 
 displayMainMenu();
