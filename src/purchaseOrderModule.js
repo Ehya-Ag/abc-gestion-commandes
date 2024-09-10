@@ -41,8 +41,6 @@ async function addOrderDetails(order_id) {
   while (continueAdding) {
     const product_id = readlineSync.question('Saisissez l\'ID du produit : ');
     const quantity = readlineSync.questionInt('Saisissez la quantité : ');
-
-    // Vérification de l'existence du produit
     const product = await getProductById(product_id);
     if (!product) {
       console.log(`Le produit avec l'ID ${product_id} n'existe pas.`);
@@ -58,12 +56,9 @@ async function addOrderDetails(order_id) {
     if (nextAction.toLowerCase() !== 'o') {
       continueAdding = false;
     }
-  }
-
-  // Choix entre sauvegarder ou annuler
+  }r
   const saveOrder = readlineSync.question('Voulez-vous sauvegarder les détails de commande ? (o/n) : ');
   if (saveOrder.toLowerCase() === 'o') {
-    // Enregistrer les détails de commande dans la base de données
     for (const detail of orderDetails) {
       await saveOrderDetail(detail);
     }
@@ -73,7 +68,6 @@ async function addOrderDetails(order_id) {
   }
 }
 
-// Pour l'enregistrement
 function saveOrderDetail({ order_id, product_id, quantity, price }) {
   return new Promise((resolve, reject) => {
     const query = 'INSERT INTO order_details (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)';
@@ -127,9 +121,40 @@ function deletePurchaseOrder(id) {
   });
 }
 
+function getOrderDetails(order_id) {
+  return new Promise((resolve, reject) => {
+    const query = `
+      SELECT 
+        order_details.id, 
+        order_details.order_id, 
+        order_details.product_id, 
+        order_details.quantity, 
+        order_details.price, 
+        customers.name AS customer_name 
+      FROM order_details 
+      JOIN purchase_orders ON order_details.order_id = purchase_orders.id 
+      JOIN customers ON purchase_orders.customer_id = customers.id 
+      WHERE order_details.order_id = ?
+    `;
+    db.query(query, [order_id], (err, results) => {
+      if (err) {
+        return reject(err);
+      }
+      if (results.length === 0) {
+        console.log('Aucun détail de commande trouvé pour cet ID.');
+      } else {
+        console.log(`\n--- Détails de la commande pour l'ID ${order_id} ---`);
+        console.table(results);
+      }
+      resolve(results);
+    });
+  });
+}
+
 module.exports = {
   getPurchaseOrders,
   addPurchaseOrder,
   updatePurchaseOrder,
   deletePurchaseOrder,
+  getOrderDetails,
 };
