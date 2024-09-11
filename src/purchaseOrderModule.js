@@ -56,7 +56,7 @@ async function addOrderDetails(order_id) {
     if (nextAction.toLowerCase() !== 'o') {
       continueAdding = false;
     }
-  }r
+  }
   const saveOrder = readlineSync.question('Voulez-vous sauvegarder les détails de commande ? (o/n) : ');
   if (saveOrder.toLowerCase() === 'o') {
     for (const detail of orderDetails) {
