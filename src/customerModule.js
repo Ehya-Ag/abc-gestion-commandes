@@ -167,9 +167,10 @@ function isValidEmail(email) {
   return emailRegex.test(email);
 }
 function isValidPhone(phone) {
-  const phoneRegex = /^[0-9]{8,20}$/;
+  const phoneRegex = /^[\d\s()+-]{8,20}$/;
   return phoneRegex.test(phone);
 }
+
 
 module.exports = {
   getCustomers,
