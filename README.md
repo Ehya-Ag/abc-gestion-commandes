@@ -25,7 +25,54 @@ Une fois dans le répertoire du projet, installez les dépendances en utilisant 
 ```npm install ```
 ### Acceder au repertoire src
 ```cd src ```
-### Lancer l'application
+
+## Configuration de la base de données
+Exécuter le script SQL pour configurer la base de données :
+
+Un script SQL complet est disponible pour créer la base de données, les tables.
+Lien vers le script SQL :
+
+[Lien du scripte](https://drive.google.com/file/d/1MTVHnLeunoGrhluwO0l9fiS2S-fJZvPI/view?usp=sharing) 
+
+Telecharger le script.
+Pour exécuter le script, utilisez la commande suivante dans votre terminal après avoir configuré MySQL :
+```
+mysql -u votre_nom_utilisateur -p < Téléchargements/abc_corporation.sql
+```
+Et si ca marche pas verifier le chemin vers le script telecharger.
+```
+mysql -u votre_nom_utilisateur -p < chemin/abc_corporation.sql
+```
+
+## Configuration du fichier de connection
+Configurer la base de données dans l'application :
+
+Ouvrez le fichier config/db.js situé dans le répertoire src.
+
+```cd config```
+
+Modifiez les informations de connexion à la base de données suivant (user, password) avec vos propres paramètres :
+```
+const mysql = require('mysql2');
+
+const db = mysql.createConnection({
+  host: 'localhost',
+  user: 'votre_nom_utilisateur',
+  password: 'votre_mot_de_passe',
+  database: 'abc_corporation',
+  connectionLimit: 2,
+  connectTimeout: false
+});
+module.exports = db;
+```
+
+Assurez-vous que les informations de connexion sont correctes avant de lancer l'application.
+
+## Lancer l'application
+Vous sortez du repertoire config
+
+```cd ..```
+Executer l'application
 
 ```node index.js ```
 
