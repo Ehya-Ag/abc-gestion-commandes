@@ -32,7 +32,7 @@ Exécuter le script SQL pour configurer la base de données :
 Un script SQL complet est disponible pour créer la base de données, les tables.
 Lien vers le script SQL :
 
-[Lien du scripte](https://drive.google.com/file/d/1MTVHnLeunoGrhluwO0l9fiS2S-fJZvPI/view?usp=sharing) 
+[Lien du script](https://drive.google.com/file/d/1ZmQz6pDXhYYoz8mNivto8cEnDBJMMk6o/view?usp=sharing) 
 
 Telecharger le script.
 Pour exécuter le script, utilisez la commande suivante dans votre terminal après avoir configuré MySQL :
