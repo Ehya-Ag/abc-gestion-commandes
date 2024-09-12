@@ -52,7 +52,7 @@ async function addPurchaseOrder({ customer_id, date, delivery_address, track_num
       console.log('Bon de commande et détails enregistrés avec succès !');
       connection.release(); 
     } catch (err) {
-      console.error('Erreur lors de l\'ajout, annulation de la transaction :', err);
+      console.error('Erreur lors de l\'ajout, verifier bien les données NB: numero suivi est unique');
       await rollbackTransaction(connection);
       connection.release();
     }
@@ -192,33 +192,10 @@ function updatePurchaseOrder(id, { customer_id, date, delivery_address, track_nu
       if (err) {
         return reject(err);
       }
-      console.log(`Bon de commande avec l'ID ${id} mis à jour avec succès !`);
+
       updateOrderDetails(id)
         .then(() => resolve(result))
         .catch((detailErr) => reject(detailErr));
-    });
-  });
-}
-
-// Pour la suppression
-function deletePurchaseOrder(id) {
-  return new Promise((resolve, reject) => {
-    const checkQuery = 'SELECT COUNT(*) AS count FROM purchase_orders WHERE id = ?';
-    db.query(checkQuery, [id], (err, results) => {
-      if (err) {
-        return reject(err);
-      }
-      if (results[0].count === 0) {
-        return reject(new Error(`Le bon de commande avec l'ID ${id} n'existe pas.`));
-      }
-      const deleteQuery = 'DELETE FROM purchase_orders WHERE id = ?';
-      db.query(deleteQuery, [id], (err, result) => {
-        if (err) {
-          return reject(err);
-        }
-        console.log(`Bon de commande avec l'ID ${id} supprimé avec succès !`);
-        resolve(result);
-      });
     });
   });
 }
@@ -292,28 +269,36 @@ async function updateOrderDetails(orderId) {
   try {
     const details = await getOrderDetails(orderId);
 
+    if (details.length === 0) {
+      console.log(`Aucun détail de commande trouvé pour l'ID de commande ${orderId}.`);
+      return;
+    }
+
     let continueUpdating = true;
 
     while (continueUpdating) {
       console.log('Détails de la commande actuels :');
-      details.forEach((detail, index) => {
-        console.log(`ID: ${detail.id}, Produit ID: ${detail.product_id}, Quantité: ${detail.quantity}`);
+      details.forEach((detail) => {
+        // Assurez-vous que 'order_detail_id' est utilisé ici
+        console.log(`ID: ${detail.order_detail_id}, Produit ID: ${detail.product_id}, Quantité: ${detail.quantity}`);
       });
 
       const detailId = readlineSync.question('ID du détail à mettre à jour : ');
 
-      // Vérifie si l'ID du détail existe dans les détails récupérés
-      const detailToUpdate = details.find(detail => detail.id == detailId);
+      // Vérifiez que l'ID du détail existe bien dans les détails récupérés
+      const detailToUpdate = details.find(detail => String(detail.order_detail_id) === String(detailId));
+
       if (!detailToUpdate) {
-        console.log(`Détail avec l'ID ${detailId} non trouvé.`);
-        continue;
+        console.log(`Détail avec l'ID ${detailId} non trouvé. Veuillez entrer un ID valide.`);
+        continue; // On continue la boucle pour entrer un ID valide
       }
 
       const newProductId = readlineSync.question('Nouvel ID du produit : ');
       const newQuantity = readlineSync.questionInt('Nouvelle quantité : ');
+
       const newUnitPrice = await getProductPrice(newProductId);
 
-      console.log(`Détails à mettre à jour : ID = ${detailId}, Nouveau produit ID = ${newProductId}, Nouvelle quantité = ${newQuantity}, Nouveau prix unitaire = ${newUnitPrice}`);
+      console.log(`Modification prévue : ID = ${detailId}, Produit = ${newProductId}, Quantité = ${newQuantity}, Prix unitaire = ${newUnitPrice}`);
 
       const updateQuery = 'UPDATE order_details SET product_id = ?, quantity = ?, price = ? WHERE id = ? AND order_id = ?';
       await new Promise((resolve, reject) => {
@@ -325,20 +310,36 @@ async function updateOrderDetails(orderId) {
           resolve(result);
         });
       });
-      // Recharger les détails après mise à jour
-      const updatedDetails = await getOrderDetails(orderId);
-      console.log('Détails de la commande mis à jour :');
-      updatedDetails.forEach((detail, index) => {
-        console.log(`ID: ${detail.id}, Produit ID: ${detail.product_id}, Quantité: ${detail.quantity}`);
-      });
+
       const anotherUpdate = readlineSync.keyInYNStrict('Voulez-vous modifier un autre détail (y= oui, n= non) ?');
       continueUpdating = anotherUpdate;
     }
-
-    console.log('Tous les détails ont été mis à jour.');
   } catch (error) {
     console.error('Erreur lors de la mise à jour des détails de la commande :', error.message);
   }
+}
+
+// Pour la suppression
+function deletePurchaseOrder(id) {
+  return new Promise((resolve, reject) => {
+    const checkQuery = 'SELECT COUNT(*) AS count FROM purchase_orders WHERE id = ?';
+    db.query(checkQuery, [id], (err, results) => {
+      if (err) {
+        return reject(err);
+      }
+      if (results[0].count === 0) {
+        return reject(new Error(`Le bon de commande avec l'ID ${id} n'existe pas.`));
+      }
+      const deleteQuery = 'DELETE FROM purchase_orders WHERE id = ?';
+      db.query(deleteQuery, [id], (err, result) => {
+        if (err) {
+          return reject(err);
+        }
+        console.log(`Bon de commande avec l'ID ${id} supprimé avec succès !`);
+        resolve(result);
+      });
+    });
+  });
 }
 module.exports = {
   getPurchaseOrders,

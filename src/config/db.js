@@ -15,7 +15,6 @@ db.getConnection((err, connection) => {
     console.error('Erreur de connexion à la base de données :', err);
     return;
   }
-  console.log('Connecté à la base de données MySQL');
   connection.release();
 });
 

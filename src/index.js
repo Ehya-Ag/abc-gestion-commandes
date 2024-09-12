@@ -225,13 +225,13 @@ function handleProductMenu(choice) {
     case '3': 
       const productIdToUpdate = readlineSync.questionInt('ID du produit à mettre à jour : ');
 
-      const newProductName = readlineSync.question('Nouveau nom (laisser vide pour conserver l\'ancien) : ');
-      const newProductDescription = readlineSync.question('Nouvelle description (laisser vide pour conserver l\'ancienne) : ');
-      const newProductPrice = readlineSync.questionFloat('Nouveau prix (laisser vide pour conserver l\'ancien) : ', { defaultInput: '' });
-      const newProductStock = readlineSync.questionInt('Nouveau stock (laisser vide pour conserver l\'ancien) : ', { defaultInput: '' });
-      const newProductCategory = readlineSync.question('Nouvelle catégorie (laisser vide pour conserver l\'ancienne) : ');
-      const newProductBarcode = readlineSync.question('Nouveau code-barres (laisser vide pour conserver l\'ancien) : ');
-      const newProductStatus = readlineSync.question('Nouveau statut (laisser vide pour conserver l\'ancien) : ');
+      const newProductName = readlineSync.question('Nouveau nom : ');
+      const newProductDescription = readlineSync.question('Nouvelle description : ');
+      const newProductPrice = readlineSync.questionFloat('Nouveau prix : ', { defaultInput: '' });
+      const newProductStock = readlineSync.questionInt('Nouveau stock : ', { defaultInput: '' });
+      const newProductCategory = readlineSync.question('Nouvelle catégorie : ');
+      const newProductBarcode = readlineSync.question('Nouveau code-barres : ');
+      const newProductStatus = readlineSync.question('Nouveau statut : ');
 
       updateProduct(productIdToUpdate, {
         name: newProductName || undefined,
@@ -243,7 +243,6 @@ function handleProductMenu(choice) {
         status: newProductStatus || undefined
       })
         .then(() => {
-          console.log('Produit mis à jour avec succès.');
           displayProductMenu();
         })
         .catch((err) => {
@@ -295,7 +294,6 @@ function handlePurchaseOrderMenu(choice) {
 
       addPurchaseOrder({ customer_id, date, delivery_address, track_number, status })
         .then(() => {
-          console.log('Bon de commande ajouté avec succès.');
           displayPurchaseOrderMenu();
         })
         .catch((err) => {
