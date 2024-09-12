@@ -18,37 +18,76 @@ function getPurchaseOrders() {
 
 // Ajout d'un bon de commande avec gestion des transactions
 async function addPurchaseOrder({ customer_id, date, delivery_address, track_number, status }) {
-  const orderDetails = await addOrderDetails(); 
+  const customerExists = await checkIfCustomerExists(customer_id);
+  if (!customerExists) {
+    console.error(`Erreur : Le client avec l'ID ${customer_id} n'existe pas.`);
+    return;
+  }
+  const orderDetails = await addOrderDetails();
+  if (!orderDetails.length) {
+    console.log("Aucun détail de commande ajouté.");
+    return;
+  }
 
   const saveOrder = readlineSync.question('Voulez-vous sauvegarder le bon de commande et ses détails ? (o/n) : ');
-  
+
   if (saveOrder.toLowerCase() === 'o') {
     try {
-      await beginTransaction();
-      const result = await insertPurchaseOrder({ customer_id, date, delivery_address, track_number, status });
+      // Démarrer la transaction et obtenir la connexion
+      const connection = await getConnection();
+      await beginTransaction(connection);
+
+      // Insérer le bon de commande
+      const result = await insertPurchaseOrder(connection, { customer_id, date, delivery_address, track_number, status });
       const order_id = result.insertId;
 
+      // Enregistrer les détails du bon de commande
       for (const detail of orderDetails) {
         detail.order_id = order_id;
-        await saveOrderDetail(detail);
+        await saveOrderDetail(connection, detail);
       }
 
       // Valider la transaction
-      await commitTransaction();
+      await commitTransaction(connection);
       console.log('Bon de commande et détails enregistrés avec succès !');
+      connection.release(); 
     } catch (err) {
       console.error('Erreur lors de l\'ajout, annulation de la transaction :', err);
-      await rollbackTransaction();
+      await rollbackTransaction(connection);
+      connection.release();
     }
   } else {
     console.log('Annulation de l\'ajout du bon de commande et des détails.');
   }
 }
 
-// Commencer la transaction
-function beginTransaction() {
+// Vérification si le client existe
+function checkIfCustomerExists(customer_id) {
   return new Promise((resolve, reject) => {
-    db.beginTransaction((err) => {
+    const query = 'SELECT COUNT(*) AS count FROM customers WHERE id = ?';
+    db.query(query, [customer_id], (err, results) => {
+      if (err) {
+        return reject(err);
+      }
+      resolve(results[0].count > 0);
+    });
+  });
+}
+// Démarrer la transaction
+function beginTransaction(connection) {
+  return new Promise((resolve, reject) => {
+    connection.beginTransaction((err) => {
+      if (err) {
+        return reject(err);
+      }
+      resolve();
+    });
+  });
+}
+// Valider la transaction
+function commitTransaction(connection) {
+  return new Promise((resolve, reject) => {
+    connection.commit((err) => {
       if (err) {
         return reject(err);
       }
@@ -57,9 +96,10 @@ function beginTransaction() {
   });
 }
 
-function commitTransaction() {
+// Annuler la transaction
+function rollbackTransaction(connection) {
   return new Promise((resolve, reject) => {
-    db.commit((err) => {
+    connection.rollback((err) => {
       if (err) {
         return reject(err);
       }
@@ -68,23 +108,34 @@ function commitTransaction() {
   });
 }
 
-
-function rollbackTransaction() {
+function getConnection() {
   return new Promise((resolve, reject) => {
-    db.rollback((err) => {
+    db.getConnection((err, connection) => {
       if (err) {
         return reject(err);
       }
-      resolve();
+      resolve(connection);
     });
   });
 }
 
 // Insérer un bon de commande
-function insertPurchaseOrder({ customer_id, date, delivery_address, track_number, status }) {
+function insertPurchaseOrder(connection, { customer_id, date, delivery_address, track_number, status }) {
   return new Promise((resolve, reject) => {
     const query = 'INSERT INTO purchase_orders (customer_id, date, delivery_address, track_number, status) VALUES (?, ?, ?, ?, ?)';
-    db.query(query, [customer_id, date, delivery_address, track_number, status], (err, result) => {
+    connection.query(query, [customer_id, date, delivery_address, track_number, status], (err, result) => {
+      if (err) {
+        return reject(err);
+      }
+      resolve(result);
+    });
+  });
+}
+
+function saveOrderDetail(connection, { order_id, product_id, quantity, price }) {
+  return new Promise((resolve, reject) => {
+    const query = 'INSERT INTO order_details (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)';
+    connection.query(query, [order_id, product_id, quantity, price], (err, result) => {
       if (err) {
         return reject(err);
       }
@@ -99,13 +150,17 @@ async function addOrderDetails() {
 
   while (continueAdding) {
     const product_id = readlineSync.question('Saisissez l\'ID du produit : ');
-    const quantity = readlineSync.questionInt('Saisissez la quantité : ');
+
     const product = await getProductById(product_id);
     if (!product) {
-      console.log(`Le produit avec l'ID ${product_id} n'existe pas.`);
+      console.log(`Erreur : Le produit avec l'ID ${product_id} n'existe pas.`);
       continue;
     }
-
+    const quantity = readlineSync.questionInt('Saisissez la quantité : ');
+    if (orderDetails.some(detail => detail.product_id === product_id)) {
+      console.log('Erreur : Ce produit a déjà été ajouté à la commande.');
+      continue;
+    }
     const price = product.price;
     orderDetails.push({ product_id, quantity, price });
 
@@ -117,21 +172,6 @@ async function addOrderDetails() {
 
   return orderDetails;
 }
-
-// Enregistrer un détail de commande
-function saveOrderDetail({ order_id, product_id, quantity, price }) {
-  return new Promise((resolve, reject) => {
-    const query = 'INSERT INTO order_details (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)';
-    db.query(query, [order_id, product_id, quantity, price], (err, result) => {
-      if (err) {
-        return reject(err);
-      }
-      resolve(result);
-    });
-  });
-}
-
-// Par id
 function getProductById(product_id) {
   return new Promise((resolve, reject) => {
     const query = 'SELECT * FROM products WHERE id = ?';
