@@ -227,8 +227,13 @@ function getOrderDetails(order_id) {
   return new Promise((resolve, reject) => {
     const query = `
       SELECT 
-        order_details.id, 
-        order_details.order_id, 
+        purchase_orders.id AS purchase_order_id,
+        purchase_orders.customer_id,
+        purchase_orders.date,
+        purchase_orders.track_number,
+        purchase_orders.status,
+        purchase_orders.delivery_address,
+        order_details.id AS order_detail_id, 
         order_details.product_id, 
         order_details.quantity, 
         order_details.price, 
@@ -244,9 +249,25 @@ function getOrderDetails(order_id) {
       }
       if (results.length === 0) {
         console.log('Aucun détail de commande trouvé pour cet ID.');
+        resolve([]);
       } else {
-        console.log(`\n--- Détails de la commande pour l'ID ${order_id} ---`);
-        console.table(results);
+        const purchaseOrder = {
+          id: results[0].purchase_order_id,
+          customer_id: results[0].customer_id,
+          date: results[0].date,
+          track_number: results[0].track_number,
+          status: results[0].status,
+          delivery_address: results[0].delivery_address
+        };
+        console.log(`\n--- Informations de la commande pour l'ID ${order_id} et ses details---`);
+        console.table([purchaseOrder]);
+        console.table(results.map(detail => ({
+          order_detail_id: detail.order_detail_id,
+          product_id: detail.product_id,
+          quantity: detail.quantity,
+          price: detail.price,
+          customer_name: detail.customer_name
+        })));
       }
       resolve(results);
     });

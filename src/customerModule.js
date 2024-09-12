@@ -94,7 +94,7 @@ function addCustomer(name, address, email, phone) {
     const query = 'INSERT INTO customers (name, address, email, phone) VALUES (?, ?, ?, ?)';
     db.query(query, [name, address, email, phone], (err, result) => {
       if (err) {
-        console.error('Erreur lors de l\'ajout du client:', err);
+        console.error('Mail saisi existe deja ajoute un autre',);
         return reject(new Error("Une erreur est survenue lors de l'ajout du client. Veuillez vérifier les données et réessayer."));
       }
       resolve(result);

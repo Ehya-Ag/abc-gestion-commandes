@@ -55,7 +55,7 @@ Modifiez les informations de connexion à la base de données suivant (user, pas
 ```
 const mysql = require('mysql2');
 
-const db = mysql.createConnection({
+const db = mysql.createPool({
   host: 'localhost',
   user: 'votre_nom_utilisateur',
   password: 'votre_mot_de_passe',
