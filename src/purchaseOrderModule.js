@@ -203,13 +203,22 @@ function updatePurchaseOrder(id, { customer_id, date, delivery_address, track_nu
 // Pour la suppression
 function deletePurchaseOrder(id) {
   return new Promise((resolve, reject) => {
-    const query = 'DELETE FROM purchase_orders WHERE id = ?';
-    db.query(query, [id], (err, result) => {
+    const checkQuery = 'SELECT COUNT(*) AS count FROM purchase_orders WHERE id = ?';
+    db.query(checkQuery, [id], (err, results) => {
       if (err) {
         return reject(err);
       }
-      console.log(`Bon de commande avec l'ID ${id} supprimé avec succès !`);
-      resolve(result);
+      if (results[0].count === 0) {
+        return reject(new Error(`Le bon de commande avec l'ID ${id} n'existe pas.`));
+      }
+      const deleteQuery = 'DELETE FROM purchase_orders WHERE id = ?';
+      db.query(deleteQuery, [id], (err, result) => {
+        if (err) {
+          return reject(err);
+        }
+        console.log(`Bon de commande avec l'ID ${id} supprimé avec succès !`);
+        resolve(result);
+      });
     });
   });
 }
