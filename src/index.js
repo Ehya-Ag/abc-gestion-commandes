@@ -303,24 +303,25 @@ function handlePurchaseOrderMenu(choice) {
           displayPurchaseOrderMenu();
   });
       break;
-    case '3':
-      const idToUpdate = readlineSync.question('ID du bon de commande à mettre à jour : ');
-      const newCustomer_id = readlineSync.question('Nouvel ID du client : ');
-      const newDate = readlineSync.question('Nouvelle date (YYYY-MM-DD) : ');
-      const newDelivery_address = readlineSync.question('Nouvelle adresse de livraison : ');
-      const newTrack_number = readlineSync.question('Nouveau numéro de suivi : ');
-      const newStatus = readlineSync.question('Nouveau statut : ');
-
-      updatePurchaseOrder(idToUpdate, { customer_id: newCustomer_id, date: newDate, delivery_address: newDelivery_address, track_number: newTrack_number, status: newStatus })
-        .then(() => {
-          console.log('Bon de commande mis à jour avec succès.');
-          displayPurchaseOrderMenu();
-        })
-        .catch((err) => {
-          console.error('Erreur :', err.message)
-          displayPurchaseOrderMenu();
-        });
-      break;
+      case '3':
+        const idToUpdate = readlineSync.question('ID du bon de commande à mettre à jour : ');
+        const newCustomer_id = readlineSync.question('Nouvel ID du client : ');
+        const newDate = readlineSync.question('Nouvelle date (YYYY-MM-DD) : ');
+        const newDelivery_address = readlineSync.question('Nouvelle adresse de livraison : ');
+        const newTrack_number = readlineSync.question('Nouveau numéro de suivi : ');
+        const newStatus = readlineSync.question('Nouveau statut : ');
+      
+        updatePurchaseOrder(idToUpdate, { customer_id: newCustomer_id, date: newDate, delivery_address: newDelivery_address, track_number: newTrack_number, status: newStatus })
+          .then(() => {
+            console.log('Bon de commande et détails mis à jour avec succès.');
+            displayPurchaseOrderMenu();
+          })
+          .catch((err) => {
+            console.error('Erreur lors de la mise à jour du bon de commande :', err.message);
+            displayPurchaseOrderMenu();
+          });
+        break;
+       
     case '4':
       const idToDelete = readlineSync.question('ID du bon de commande à supprimer : ');
 
@@ -360,8 +361,6 @@ function handlePaymentMenu(choice) {
     case '1':
       getPayments()
         .then((payments) => {
-          console.log('\n--- Liste des paiements ---');
-          console.table(payments);
           displayPaymentMenu(); 
         })
         .catch((err) => {
