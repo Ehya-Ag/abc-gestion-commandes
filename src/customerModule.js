@@ -152,8 +152,8 @@ function deleteCustomer(id) {
       return new Promise((resolve, reject) => {
         db.query(query, [intId], (err, result) => {
           if (err) {
-            console.error('Erreur lors de la suppression du client:', err);
-            return reject(new Error("Une erreur est survenue lors de la suppression du client. Veuillez réessayer."));
+            console.log('Le client a des commandes, veuillez les supprimmer avant.');
+            return reject(new Error("Veuillez verifier les données du client à supprimer, ."));
           }
           resolve(result);
         });

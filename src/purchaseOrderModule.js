@@ -184,22 +184,6 @@ function getProductById(product_id) {
   });
 }
 
-// Pour la mise à jour
-function updatePurchaseOrder(id, { customer_id, date, delivery_address, track_number, status }) {
-  return new Promise((resolve, reject) => {
-    const query = 'UPDATE purchase_orders SET customer_id = ?, date = ?, delivery_address = ?, track_number = ?, status = ? WHERE id = ?';
-    db.query(query, [customer_id, date, delivery_address, track_number, status, id], (err, result) => {
-      if (err) {
-        return reject(err);
-      }
-
-      updateOrderDetails(id)
-        .then(() => resolve(result))
-        .catch((detailErr) => reject(detailErr));
-    });
-  });
-}
-
 function getOrderDetails(order_id) {
   return new Promise((resolve, reject) => {
     const query = `
@@ -250,73 +234,149 @@ function getOrderDetails(order_id) {
     });
   });
 }
-// mettre a jour details
-function getProductPrice(productId) {
+function saveOrUpdateOrderDetail(connection, { order_id, product_id, quantity, price }) {
   return new Promise((resolve, reject) => {
-    const query = 'SELECT price FROM products WHERE id = ?';
-    db.query(query, [productId], (err, results) => {
+    const checkQuery = 'SELECT * FROM order_details WHERE order_id = ? AND product_id = ?';
+    connection.query(checkQuery, [order_id, product_id], (err, results) => {
       if (err) {
         return reject(err);
       }
-      if (results.length === 0) {
-        return reject(new Error(`Produit avec l'ID ${productId} non trouvé.`));
-      }
-      resolve(results[0].price);
-    });
-  });
-}
-async function updateOrderDetails(orderId) {
-  try {
-    const details = await getOrderDetails(orderId);
-
-    if (details.length === 0) {
-      console.log(`Aucun détail de commande trouvé pour l'ID de commande ${orderId}.`);
-      return;
-    }
-
-    let continueUpdating = true;
-
-    while (continueUpdating) {
-      console.log('Détails de la commande actuels :');
-      details.forEach((detail) => {
-        // Assurez-vous que 'order_detail_id' est utilisé ici
-        console.log(`ID: ${detail.order_detail_id}, Produit ID: ${detail.product_id}, Quantité: ${detail.quantity}`);
-      });
-
-      const detailId = readlineSync.question('ID du détail à mettre à jour : ');
-
-      // Vérifiez que l'ID du détail existe bien dans les détails récupérés
-      const detailToUpdate = details.find(detail => String(detail.order_detail_id) === String(detailId));
-
-      if (!detailToUpdate) {
-        console.log(`Détail avec l'ID ${detailId} non trouvé. Veuillez entrer un ID valide.`);
-        continue; // On continue la boucle pour entrer un ID valide
-      }
-
-      const newProductId = readlineSync.question('Nouvel ID du produit : ');
-      const newQuantity = readlineSync.questionInt('Nouvelle quantité : ');
-
-      const newUnitPrice = await getProductPrice(newProductId);
-
-      console.log(`Modification prévue : ID = ${detailId}, Produit = ${newProductId}, Quantité = ${newQuantity}, Prix unitaire = ${newUnitPrice}`);
-
-      const updateQuery = 'UPDATE order_details SET product_id = ?, quantity = ?, price = ? WHERE id = ? AND order_id = ?';
-      await new Promise((resolve, reject) => {
-        db.query(updateQuery, [newProductId, newQuantity, newUnitPrice, detailId, orderId], (err, result) => {
+      if (results.length > 0) {
+        const updateQuery = 'UPDATE order_details SET quantity = ?, price = ? WHERE order_id = ? AND product_id = ?';
+        connection.query(updateQuery, [quantity, price, order_id, product_id], (err, result) => {
           if (err) {
             return reject(err);
           }
-          console.log(`Détail de commande avec l'ID ${detailId} mis à jour avec succès !`);
-          resolve(result);
+          resolve({ message: 'Détail de commande mis à jour avec succès.' });
         });
-      });
-
-      const anotherUpdate = readlineSync.keyInYNStrict('Voulez-vous modifier un autre détail (y= oui, n= non) ?');
-      continueUpdating = anotherUpdate;
-    }
-  } catch (error) {
-    console.error('Erreur lors de la mise à jour des détails de la commande :', error.message);
+      } else {
+        const confirmation = readlineSync.keyInYNStrict('Le détail de commande n\'existe pas. Voulez-vous l\'ajouter ?');
+        if (confirmation) {
+          const insertQuery = 'INSERT INTO order_details (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)';
+          connection.query(insertQuery, [order_id, product_id, quantity, price], (err, result) => {
+            if (err) {
+              return reject(err);
+            }
+            resolve({ message: 'Détail de commande ajouté avec succès.' });
+          });
+        } else {
+          resolve({ message: 'Ajout annulé par l\'utilisateur.' });
+        }
+      }
+    });
+  });
+}
+// Pour la mise à jour
+async function updatePurchaseOrder(orderId, { customer_id, date, delivery_address, track_number, status }) {
+  // Vérifier si le bon de commande existe
+  const orderExists = await checkIfPurchaseOrderExists(orderId);
+  if (!orderExists) {
+    console.error(`Erreur : Le bon de commande avec l'ID ${orderId} n'existe pas.`);
+    return;
   }
+  const currentDetails = await getOrderDetails(orderId);
+  const newDetails = await addOrUpdateOrderDetails(orderId, currentDetails);
+
+  if (!newDetails.length) {
+    console.log("Aucun détail de commande modifié.");
+    return;
+  }
+
+  const saveChanges = readlineSync.question('Voulez-vous sauvegarder les modifications du bon de commande et de ses détails ? (o/n) : ');
+
+  if (saveChanges.toLowerCase() === 'o') {
+    try {
+      const connection = await getConnection();
+      await beginTransaction(connection);
+      await updateOrder(connection, orderId, { customer_id, date, delivery_address, track_number, status });
+      for (const detail of newDetails) {
+        await saveOrUpdateOrderDetail(connection, detail);
+      }
+
+      await commitTransaction(connection);
+      console.log('Bon de commande et détails mis à jour avec succès !');
+      connection.release();
+    } catch (err) {
+      console.error('Erreur lors de la mise à jour, veuillez vérifier les données.');
+      await rollbackTransaction(connection);
+      connection.release();
+    }
+  } else {
+    console.log('Annulation de la mise à jour du bon de commande et des détails.');
+  }
+}
+
+// Vérifier si un bon de commande existe
+function checkIfPurchaseOrderExists(orderId) {
+  return new Promise((resolve, reject) => {
+    const query = 'SELECT COUNT(*) AS count FROM purchase_orders WHERE id = ?';
+    db.query(query, [orderId], (err, results) => {
+      if (err) {
+        return reject(err);
+      }
+      resolve(results[0].count > 0);
+    });
+  });
+}
+function updateOrder(connection, orderId, { customer_id, date, delivery_address, track_number, status }) {
+  return new Promise((resolve, reject) => {
+    const query = 'UPDATE purchase_orders SET customer_id = ?, date = ?, delivery_address = ?, track_number = ?, status = ? WHERE id = ?';
+    connection.query(query, [customer_id, date, delivery_address, track_number, status, orderId], (err, result) => {
+      if (err) {
+        return reject(err);
+      }
+      resolve(result);
+    });
+  });
+}
+
+// Ajouter ou mettre à jour les détails de commande
+async function addOrUpdateOrderDetails(orderId, currentDetails) {
+  let continueAdding = true;
+  const updatedDetails = [];
+
+  while (continueAdding) {
+    const product_id = readlineSync.question('Saisissez l\'ID du produit : ');
+
+    const product = await getProductById(product_id);
+    if (!product) {
+      console.log(`Erreur : Le produit avec l'ID ${product_id} n'existe pas.`);
+      continue;
+    }
+
+    const quantity = readlineSync.questionInt('Saisissez la quantité : ');
+    const price = product.price;
+
+    const existingDetail = currentDetails.find(detail => detail.product_id === product_id);
+
+    if (existingDetail) {
+      // Mise à jour d'un détail existant
+      await updateOrderDetail(orderId, existingDetail.id, quantity, price);
+    } else {
+      // Ajout d'un nouveau détail
+      updatedDetails.push({ order_id: orderId, product_id, quantity, price });
+    }
+
+    const nextAction = readlineSync.question('Voulez-vous ajouter ou mettre à jour un autre produit ? (o/n) : ');
+    if (nextAction.toLowerCase() !== 'o') {
+      continueAdding = false;
+    }
+  }
+
+  return updatedDetails;
+}
+
+function updateOrderDetail(orderId, detailId, quantity, price) {
+  return new Promise((resolve, reject) => {
+    const query = 'UPDATE order_details SET quantity = ?, price = ? WHERE id = ? AND order_id = ?';
+    db.query(query, [quantity, price, detailId, orderId], (err, result) => {
+      if (err) {
+        return reject(err);
+      }
+      console.log(`Détail de commande avec l'ID ${detailId} mis à jour avec succès !`);
+      resolve(result);
+    });
+  });
 }
 
 // Pour la suppression

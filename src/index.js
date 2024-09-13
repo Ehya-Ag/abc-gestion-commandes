@@ -119,7 +119,6 @@ function handleCustomerMenu(choice) {
 
         addCustomer(name, address, email, phone)
           .then(() => {
-            console.log('Client ajouté avec succès.');
             displayCustomerMenu(); 
           })
           .catch((err) => {
@@ -141,7 +140,6 @@ function handleCustomerMenu(choice) {
 
         updateCustomer(idToUpdate, newName, newAddress, newEmail, newPhone)
           .then(() => {
-            console.log('Client mis à jour avec succès.');
             displayCustomerMenu(); 
           })
           .catch((err) => {
@@ -159,7 +157,6 @@ function handleCustomerMenu(choice) {
 
         deleteCustomer(idToDelete)
           .then(() => {
-            console.log('Client supprimé avec succès.');
             displayCustomerMenu();
           })
           .catch((err) => {
@@ -213,7 +210,6 @@ function handleProductMenu(choice) {
 
       addProduct({ name: productName, description: productDescription, price: productPrice, stock: productStock, category: productCategory, barcode: productBarcode, status: productStatus })
         .then(() => {
-          console.log('Produit ajouté avec succès.');
           displayProductMenu(); 
         })
         .catch((err) => {
@@ -256,7 +252,6 @@ function handleProductMenu(choice) {
 
       deleteProduct(productIdToDelete)
         .then(() => {
-          console.log('Produit supprimé avec succès.');
           displayProductMenu();
         })
         .catch((err) => {
@@ -308,24 +303,26 @@ function handlePurchaseOrderMenu(choice) {
         const newDelivery_address = readlineSync.question('Nouvelle adresse de livraison : ');
         const newTrack_number = readlineSync.question('Nouveau numéro de suivi : ');
         const newStatus = readlineSync.question('Nouveau statut : ');
-      
-        updatePurchaseOrder(idToUpdate, { customer_id: newCustomer_id, date: newDate, delivery_address: newDelivery_address, track_number: newTrack_number, status: newStatus })
-          .then(() => {
-            console.log('Bon de commande et détails mis à jour avec succès.');
-            displayPurchaseOrderMenu();
-          })
-          .catch((err) => {
-            console.error('Erreur lors de la mise à jour du bon de commande :', err.message);
-            displayPurchaseOrderMenu();
-          });
+        updatePurchaseOrder(idToUpdate, {
+          customer_id: newCustomer_id,
+          date: newDate,
+          delivery_address: newDelivery_address,
+          track_number: newTrack_number,
+          status: newStatus
+        })
+        .then(() => {
+          displayPurchaseOrderMenu();
+        })
+        .catch((err) => {
+          console.error('Erreur lors de la mise à jour du bon de commande :', err.message);
+          displayPurchaseOrderMenu();
+        });
         break;
-       
     case '4':
       const idToDelete = readlineSync.question('ID du bon de commande à supprimer : ');
 
       deletePurchaseOrder(idToDelete)
         .then(() => {
-          console.log('Bon de commande supprimé avec succès.');
           displayPurchaseOrderMenu();
         })
         .catch((err) => {
@@ -407,7 +404,6 @@ function handlePaymentMenu(choice) {
 
       updatePayment(paymentIdToUpdate, updatedPaymentData)
         .then(() => {
-          console.log('Paiement mis à jour avec succès.');
           displayPaymentMenu();
         })
         .catch((err) => {
@@ -421,7 +417,6 @@ function handlePaymentMenu(choice) {
 
       deletePayment(paymentIdToDelete)
         .then(() => {
-          console.log('Paiement supprimé avec succès.');
           displayPaymentMenu(); 
         })
         .catch((err) => {
