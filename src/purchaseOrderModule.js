@@ -1,3 +1,4 @@
+const { errorMessages } = require('vue/compiler-sfc');
 const db = require('./config/db');
 const readlineSync = require('readline-sync');
 
@@ -52,7 +53,7 @@ async function addPurchaseOrder({ customer_id, date, delivery_address, track_num
       console.log('Bon de commande et détails enregistrés avec succès !');
       connection.release(); 
     } catch (err) {
-      console.error('Erreur lors de l\'ajout, verifier bien les données NB: numero suivi est unique');
+      console.error('Erreur lors de l\'ajout, verifier bien les données saisi');
       await rollbackTransaction(connection);
       connection.release();
     }
@@ -250,25 +251,13 @@ function saveOrUpdateOrderDetail(connection, { order_id, product_id, quantity, p
           resolve({ message: 'Détail de commande mis à jour avec succès.' });
         });
       } else {
-        const confirmation = readlineSync.keyInYNStrict('Le détail de commande n\'existe pas. Voulez-vous l\'ajouter ?');
-        if (confirmation) {
-          const insertQuery = 'INSERT INTO order_details (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)';
-          connection.query(insertQuery, [order_id, product_id, quantity, price], (err, result) => {
-            if (err) {
-              return reject(err);
-            }
-            resolve({ message: 'Détail de commande ajouté avec succès.' });
-          });
-        } else {
-          resolve({ message: 'Ajout annulé par l\'utilisateur.' });
-        }
+        resolve({ message: 'Le détail de commande n\'est pas associé à la commande.' });
       }
     });
   });
 }
 // Pour la mise à jour
 async function updatePurchaseOrder(orderId, { customer_id, date, delivery_address, track_number, status }) {
-  // Vérifier si le bon de commande existe
   const orderExists = await checkIfPurchaseOrderExists(orderId);
   if (!orderExists) {
     console.error(`Erreur : Le bon de commande avec l'ID ${orderId} n'existe pas.`);

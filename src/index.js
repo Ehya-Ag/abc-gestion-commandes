@@ -314,7 +314,7 @@ function handlePurchaseOrderMenu(choice) {
           displayPurchaseOrderMenu();
         })
         .catch((err) => {
-          console.error('Erreur lors de la mise à jour du bon de commande :', err.message);
+          console.error('Modification a echoué');
           displayPurchaseOrderMenu();
         });
         break;
