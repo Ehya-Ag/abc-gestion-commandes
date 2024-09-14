@@ -1,7 +1,7 @@
-# ABC Management
+# ABC-GESTION-COMMANDES
 
 ## Description
-ABC Management est une application de gestion pour suivre les commandes, paiements et produits d'une entreprise. Ce projet est basé sur Node.js et utilise une base de données MySQL.
+abc-gestion-commandes est une application de gestion pour suivre les commandes, paiements et produits d'une entreprise. Ce projet est basé sur Node.js et utilise une base de données MySQL.
 
 ## Prérequis
 
@@ -15,16 +15,9 @@ Avant de pouvoir lancer l'application, assurez-vous d'avoir installé les élém
 
 Pour cloner le projet sur votre machine locale, exécutez la commande suivante dans votre terminal :
 
-```git clone https://github.com/Ehya-Ag/abc-management.git```
+```git clone https://github.com/Ehya-Ag/abc-gestion-commandes.git```
 ## Acceder au repertoire
-```cd abc-management ```
-
-## Installation des dépendances
-Une fois dans le répertoire du projet, installez les dépendances en utilisant npm :
-
-```npm install ```
-### Acceder au repertoire src
-```cd src ```
+```cd abc-gestion-commandes ```
 
 ## Configuration de la base de données
 Exécuter le script SQL pour configurer la base de données :
@@ -47,9 +40,9 @@ mysql -u votre_nom_utilisateur -p < chemin/abc_corporation.sql
 ## Configuration du fichier de connection
 Configurer la base de données dans l'application :
 
-Ouvrez le fichier config/db.js situé dans le répertoire src.
+Ouvrez le fichier db.js situé dans le répertoire src/config/.
 
-```cd config```
+```cd src/config/```
 
 Modifiez les informations de connexion à la base de données suivant (user, password) avec vos propres paramètres :
 ```
@@ -65,14 +58,18 @@ const db = mysql.createPool({
 });
 module.exports = db;
 ```
-
 Assurez-vous que les informations de connexion sont correctes avant de lancer l'application.
+## Installation des dépendances
+Une fois dans le répertoire du projet, installez les dépendances en utilisant npm :
+retourner à la racine du project
+
+```cd ../../```
+
+```npm install ```
+### Acceder au repertoire src
+```cd src ```
 
 ## Lancer l'application
-Vous sortez du repertoire config
-
-```cd ..```
-Executer l'application
 
 ```node index.js ```
 
