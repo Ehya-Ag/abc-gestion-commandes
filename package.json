@@ -10,7 +10,6 @@
   "description": "",
   "dependencies": {
     "mysql": "^2.18.1",
-    "mysql2": "^3.11.0",
     "readline-sync": "^1.4.10"
   }
 }

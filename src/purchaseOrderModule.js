@@ -1,4 +1,3 @@
-const { errorMessages } = require('vue/compiler-sfc');
 const db = require('./config/db');
 const readlineSync = require('readline-sync');
 
